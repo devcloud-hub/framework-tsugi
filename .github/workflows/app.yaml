@@ -1,0 +1,33 @@
+name: Deploy to Linode
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+
+      - name: Deploy
+        run: |
+            cd /home/githubrunner/framework-tsugi
+            git pull
+            docker build -t currikiprod-tsugi -f Dockerfile.8.1 .
+            docker tag currikiprod-tsugi quay.io/curriki/tsugi:frame-new
+            docker push quay.io/curriki/tsugi:frame-new
+
+            echo "Updating Docker Swarm Stack..."
+            # Updating Server
+            # docker service update --image quay.io/curriki/tsugi:frame-new currikistack_currikiprod-tsugi
+
+            
+            
+            
