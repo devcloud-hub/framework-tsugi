@@ -150,7 +150,7 @@ $text='{
         $json->url = $params['url'];
         if ( U::get($params, 'title') ) $json->{'title'} = U::get($params, 'title');
         if ( U::get($params, 'text') ) $json->{'text'} = U::get($params, 'text');
-        if ( U::get($params, 'icon') ) $json->{'icon_url'} = U::get($params, 'icon');
+        if ( U::get($params, 'icon') ) $json->{'icon'} = U::get($params, 'icon');
         if ( U::get($params, 'fa_icon') ) $json->{'fa_icon'} = U::get($params, 'fa_icon');
 
         unset($json->custom);

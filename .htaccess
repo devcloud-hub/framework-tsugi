@@ -6,6 +6,10 @@
     RewriteRule ^ tsugi.php [L]
 </IfModule>
 
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+</IfModule>
+
 <IfModule !mod_rewrite.c>
     FallbackResource tsugi.php
 </IfModule>

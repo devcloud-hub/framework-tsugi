@@ -294,17 +294,18 @@ class Context extends Entity {
      * @param $grade Value to send
      * @param $scoreMaximum What the score is relative to
      * @param $comment An optional comment
+     * @param $extra An optional extra array for grade passback
      * @param $debug_log Returns a log of actions taken
      *
      * @return mixed If this is a success a true is returned, if not a string with an error
      * is returned.
      */
-    public function sendLineItemResult($id, $user_key, $grade, $scoreMaximum, $comment, &$debug_log=false) {
+    public function sendLineItemResult($id, $user_key, $grade, $scoreMaximum, $comment, $extra = false, &$debug_log=false) {
         $grade_token = self::getGradeToken($missing, $subject, $debug_log);
         if ( strlen($missing) > 0 ) return $missing;
         if ( ! $grade_token ) return "Unable to get grade_token";
 
-	$extra = false;
+	    // $extra = false;
         $status = LTI13::sendLineItemResult($user_key, $grade, $scoreMaximum, $comment, $id,
                         $grade_token, $extra, $debug_log);
 

@@ -162,6 +162,7 @@ class Result extends Entity {
         $secret = false;
         $lti13_privkey = false;
         $lti13_subject_key = false;
+        $lti13_extra = '';
         if ( $row !== false ) {
             // Using the note from the local db for the comment.
             $comment = isset($row['note']) ? $row['note'] : false;
@@ -177,6 +178,7 @@ class Result extends Entity {
             $result_id = isset($row['result_id']) ? $row['result_id'] : false;
             $lti13_lineitem = isset($row['lti13_lineitem']) ? $row['lti13_lineitem'] : false;
             $lti13_subject_key = isset($row['lti13_subject_key']) ? $row['lti13_subject_key'] : false;
+            $lti13_extra = isset($row['lti13_extra']) ? $row['lti13_extra'] : false;
         } else {
             $result_url = LTIX::ltiParameter('result_url');
             $sourcedid = LTIX::ltiParameter('sourcedid');
@@ -224,6 +226,7 @@ class Result extends Entity {
         // Check is this is a Google Classroom Launch
         // TODO: we should accept a comment
         $comment = '';
+       
         $GradeSendTransport = false;
         if ( isset($_SESSION['lti']) && isset($_SESSION['lti']['gc_submit_id']) ) {
             if ( is_array($debug_log) )  $debug_log[] = "Using Google Classroom";
@@ -235,7 +238,7 @@ class Result extends Entity {
             if ( is_array($debug_log) )  $debug_log[] = "Using LTI Advantage";
             $GradeSendTransport = "LTI 1.3";
             error_log("Sending LTI 1.3 grade of $grade for $lti13_subject_key to $lti13_lineitem");
-            $status = $LTI->context->sendLineItemResult($lti13_lineitem, $lti13_subject_key, $grade."", "1", $comment, $debug_log);
+            $status = $LTI->context->sendLineItemResult($lti13_lineitem, $lti13_subject_key, $grade."", "1", $comment, $lti13_extra, $debug_log);
 
         // Classic POX call
         } else if ( strlen($key_key) > 0 && strlen($secret) > 0 && strlen($sourcedid) > 0 && strlen($service) > 0 ) {
