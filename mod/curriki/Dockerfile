@@ -1,4 +1,12 @@
-FROM php:7.2-apache
+# Critical PHP RCE fix (CVE-2026-109618, CVE-2026-109619): PHP 7.4 plus the PHP security team's
+# 7.4 backport (7.2 and 7.4 get no release). Stays until the app moves to PHP 8.x; see php-security-patch.sh.
+FROM php:7.4-apache AS php-base
+ENV PHP_PATCH_URL="https://github.com/php/php-src/commit/712e60f9edfd03f0960fc4fc3c2c375f42b90aa2.patch" \
+    PHP_PATCH_SHA256="5fe57ca6ee96d59b36c6e0ca842843c50884f177bef1e85234cf669b577f5e48"
+COPY php-security-patch.sh /tmp/
+RUN sh /tmp/php-security-patch.sh && rm /tmp/php-security-patch.sh
+
+FROM php-base
 
 # Add apache and php config for Laravel
 COPY ./tsugi.conf /etc/apache2/sites-available/site.conf
@@ -27,6 +35,17 @@ WORKDIR /var/www/html/tsugi
 
 # Copy the PHP configuration file
 COPY ./php.ini /usr/local/etc/php/
+# Security hardening, loaded last so it overrides php.ini. session.upload_progress is pre-emptive for
+# the 2026-10-21 PHP RCEs (CVE-2026-109618/109619, reported in the upload-progress / multipart path).
+# No disable_functions: the entrypoint runs composer, and Tsugi's git tooling needs proc_open.
+RUN printf '%s\n' \
+    'expose_php = Off' \
+    'session.upload_progress.enabled = Off' \
+    'allow_url_include = Off' \
+    'display_errors = Off' \
+    'display_startup_errors = Off' \
+    'log_errors = On' \
+    > "$PHP_INI_DIR/conf.d/zz-security.ini"
 COPY . /var/www/html/tsugi
 #COPY . /var/www/html/
 

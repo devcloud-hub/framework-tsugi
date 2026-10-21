@@ -6,28 +6,55 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+# One deploy at a time; a newer push waits for the running one instead of racing it
+concurrency:
+  group: deploy-linode
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # Don't leave the job token in .git/config, where a build could pick it up
+          persist-credentials: false
 
+      - name: Build image
+        run: docker build -t currikiprod-tsugi .
 
-      - name: Deploy
+      # Fail before pushing if the hardening is not active or the image
+      # contains repo metadata, env files, keys or the site config.php
+      - name: Verify PHP hardening and no secrets in image
         run: |
-            cd /home/githubrunner/framework-tsugi
-            git pull
-            docker build -t currikiprod-tsugi .
+            docker run --rm --entrypoint php currikiprod-tsugi -r '
+              echo "PHP ", PHP_VERSION, PHP_EOL;
+              $bad = ini_get("session.upload_progress.enabled") || ini_get("expose_php");
+              exit($bad ? 1 : 0);'
+
+            found="$(docker run --rm --entrypoint sh currikiprod-tsugi -c '
+              cd /var/www/html/tsugi && find . \( -name .git -o -name ".env" -o -name ".env.*" -o -name "*.pem" \
+                -o -name "*.key" -o -name "id_rsa*" -o -name auth.json -o -path ./config.php \) -print')"
+            if [ -n "$found" ]; then
+              echo "::error::Image contains files that must not ship:"
+              echo "$found"
+              exit 1
+            fi
+
+      - name: Push to quay.io
+        env:
+          QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+          QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+        run: |
+            echo "$QUAY_PASSWORD" | docker login quay.io -u "$QUAY_USERNAME" --password-stdin
             docker tag currikiprod-tsugi quay.io/curriki/tsugi:frame-new
             docker push quay.io/curriki/tsugi:frame-new
+            docker logout quay.io
 
-            echo "Updating Docker Swarm Stack..."
-            # Updating Server
+            # Swarm update stays manual, as before:
             # docker service update --image quay.io/curriki/tsugi:frame-new currikistack_currikiprod-tsugi
-
-            
-            
-            
