@@ -1,2 +1,12 @@
 config.php
 mod/curriki/config.php
+
+# Never ship credentials or repo metadata in images
+**/.git
+.github
+**/.env
+**/.env.*
+**/*.key
+**/*.pem
+docker-compose.yml
+.docker_data
